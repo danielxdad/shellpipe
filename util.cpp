@@ -3,10 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
+#include <time.h>
 
 #include "util.h"
 
 using namespace std;
+
+FILE *fdLog = NULL;
 
 class DecodeString{
 	char *unEncStr;
@@ -188,5 +191,32 @@ BOOL TerminateConnectionToNetworkResource(LPSTR lpName){
 	if(WNetCancelConnection2(lpName, NULL, TRUE) != NO_ERROR)
 		return FALSE;
 
+	return TRUE;
+}
+
+BOOL fileLogPrint(LPCSTR szLog){
+	LPSTR lpTmpString;
+	time_t current_time = time(NULL);
+
+	if(!szLog) return FALSE;
+
+	lpTmpString = new CHAR[strlen(szLog) + MAX_PATH];
+	if(!lpTmpString) return FALSE;
+
+	if(!fdLog){
+		if(!(fdLog = fopen("c:\\shellpipe.log", "a"))){
+			if(!(fdLog = fopen("c:\\shellpipe.log", "w"))){
+				return FALSE;
+			}
+		}
+	}
+
+	strftime(lpTmpString, strlen(szLog) + MAX_PATH, "[%Y/%m/%d %H:%M:%S] - ", localtime(&current_time));
+	sprintf((LPSTR)(lpTmpString + strlen(lpTmpString)), "%d - ", GetCurrentProcessId());
+	strcat(lpTmpString, szLog);
+	strcat(lpTmpString, "\r\n");
+
+	fputs(lpTmpString, fdLog);
+	fflush(fdLog);
 	return TRUE;
 }

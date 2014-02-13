@@ -290,7 +290,6 @@ DWORD CheckIsProcessRuningAsUser(LPSTR lpszPathProc, LPSTR lpszUserName){
 
 		  CloseHandle( hProcess );
 		}
-
 	} while( Process32Next( hProcessSnap, &pe32 ) );
 
 	
