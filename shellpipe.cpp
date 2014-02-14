@@ -423,6 +423,16 @@ DWORD ProccesMacro(HANDLE hPipe, LPSTR cmdLine){
 	if(strstr(selectMacro, ds.getDecodeString((LPSTR)encStr_switch))){
 		return Macro_ProcSwitcher(hPipe);
 	}
+
+	//Macro Upgrade
+	if(strstr(selectMacro, ds.getDecodeString((LPSTR)lpMacros[10]))){
+		if (dwLenArrayCmdLine < 2){
+			WriteToPipe(hPipe, ds.length(), ds.getDecodeString((LPSTR)encStr_Missing_parameters), FLAG_ERROR);
+			return FALSE;
+		}
+
+		return Macro_Upgrade(hPipe, lpArrayCmdLine[1]);
+	}
 	
 	return TRUE;
 }
