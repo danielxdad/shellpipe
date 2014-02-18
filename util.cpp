@@ -194,6 +194,7 @@ BOOL TerminateConnectionToNetworkResource(LPSTR lpName){
 	return TRUE;
 }
 
+#ifdef DEBUG_SHOW_ERROR_TO_FILE
 BOOL fileLogPrint(LPCSTR szLog){
 	LPSTR lpTmpString;
 	time_t current_time = time(NULL);
@@ -220,3 +221,4 @@ BOOL fileLogPrint(LPCSTR szLog){
 	fflush(fdLog);
 	return TRUE;
 }
+#endif
