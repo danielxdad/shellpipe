@@ -15,6 +15,8 @@ DWORD IsPortConnected(WORD wPort){
 	in_addr addrLocal, addrRemote;
 	int i;
 
+	if(!wPort) goto Cleanup;
+
     if ((dwRetVal = GetTcpTable(pTcpTable, &dwSize, TRUE)) ==
         ERROR_INSUFFICIENT_BUFFER) {
         delete pTcpTable;
@@ -35,12 +37,6 @@ DWORD IsPortConnected(WORD wPort){
 
 			addrLocal.S_un.S_addr = pTcpTable->table[i].dwLocalAddr;
 			addrRemote.S_un.S_addr = pTcpTable->table[i].dwRemoteAddr;
-
-			/*printf("%s:%d - %s:%d\n", inet_ntoa(addrLocal),
-				ntohs(pTcpTable->table[i].dwLocalPort),
-				inet_ntoa(addrRemote),
-				ntohs(pTcpTable->table[i].dwRemotePort)
-			);*/
 
 			if(ntohs(pTcpTable->table[i].dwLocalPort) == wPort 
 				&& pTcpTable->table[i].dwState == MIB_TCP_STATE_ESTAB){
@@ -67,7 +63,7 @@ Cleanup:
 DWORD GetRAdminListenPort(void){
 	HKEY hKey=NULL;
 	DWORD dwValueType = REG_BINARY, dwcbOutBuffer = sizeof(DWORD);
-	DWORD dwPort = RADMIN30_DEFAULT_LISTEN_PORT;
+	DWORD dwPort = NULL;
 	DecodeString ds;
 
 	if(RegOpenKey(HKEY_LOCAL_MACHINE, 
@@ -77,7 +73,7 @@ DWORD GetRAdminListenPort(void){
 
 	if(RegQueryValueEx(hKey, ds.getDecodeString((LPSTR)encStr_Port), NULL, &dwValueType, 
 		(LPBYTE)&dwPort, &dwcbOutBuffer) != ERROR_SUCCESS){
-		dwPort = RADMIN30_DEFAULT_LISTEN_PORT;
+		dwPort = NULL;
 		goto Cleanup;
 	}
 

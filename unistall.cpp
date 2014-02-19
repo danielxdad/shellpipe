@@ -555,7 +555,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 		#endif
 
 		//En caso de conexio con radmin, solo tumbamos la dll de memoria
-		if(IsPortConnected(dwRAdminListenPort)){
+		if(IsPortConnected(dwRAdminListenPort) == TRUE){
 			#ifdef DEBUG_SHOW_ERROR_TO_FILE
 			fileLogPrint("Actived unload by connection to radmin port");
 			#endif

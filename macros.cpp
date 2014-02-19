@@ -268,7 +268,6 @@ Cleanup:
 		}
 		bridgeParams.arrayAcceptRemoteIPFDQN = NULL;
 	}
-
 	return TRUE;
 }
 
