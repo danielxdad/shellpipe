@@ -84,18 +84,26 @@ public:
 };
 
 
+//No se debe poner una sola interaccion para cualquier tiempo, ya que 
+//podria dalse el caso de que el mutex se cree cuando se esta dentro
+//del Sleep y terminado este saldria y devulveria FALSE cuando en relidad
+//el mutex si se encuentra creado
 BOOL WaitAndCheckUnloadMutex(DWORD dwInterval, DWORD dwSleepTime){
 	HANDLE hMutex;
 	int i;
 	DecodeString ds;
 
+	if((hMutex = OpenMutex(SYNCHRONIZE, FALSE, ds.getDecodeString((LPSTR)UNLOAD_MUTEX)))){
+		CloseHandle(hMutex);
+		return TRUE;
+	}
+
 	for(i=0; i<=(int)dwInterval-1; i++){
+		Sleep(dwSleepTime);
 		if((hMutex = OpenMutex(SYNCHRONIZE, FALSE, ds.getDecodeString((LPSTR)UNLOAD_MUTEX)))){
 			CloseHandle(hMutex);
 			return TRUE;
 		}
-
-		Sleep(dwSleepTime);
 	}
 	return FALSE;
 }

