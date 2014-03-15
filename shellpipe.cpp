@@ -189,7 +189,6 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 	DWORD numBytesRead=0, exitCode, nBytesStdOut=NULL, dwTmp, dwRetVal=TRUE;
 	CHAR msg[256]={0};
 	SECURITY_ATTRIBUTES secAttr;
-	HDESK hDesktop=NULL;
 	DecodeString ds;
 
 	stInfo.cb = sizeof(STARTUPINFO);
@@ -222,7 +221,23 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 		stInfo.wShowWindow = SW_HIDE;
 	}
 	else{
-		stInfo.lpDesktop = "WINSTA0\\Default";
+		//stInfo.lpDesktop = "WINSTA0\\Default";
+		stInfo.lpDesktop = new CHAR[MAX_PATH];
+		if(!stInfo.lpDesktop){
+			sprintf(msg, ds.getDecodeString((LPSTR)encStr_No_enough_memory));
+			WriteToPipe(hPipe, strlen(msg), msg, FLAG_ERROR);
+			dwRetVal = FALSE;
+			goto Cleanup;
+		}
+		
+		if(!GetActiveDesktop(stInfo.lpDesktop, MAX_PATH)){
+			if(!strlen(stInfo.lpDesktop)){
+				sprintf(msg, ds.getDecodeString((LPSTR)encStr_Error_create_process), GetLastError());
+				WriteToPipe(hPipe, strlen(msg), msg, FLAG_ERROR);
+				dwRetVal = FALSE;
+				goto Cleanup;
+			}
+		}
 	}
 
 	if(lpUserName && lpPassword){
@@ -269,6 +284,7 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 			delete[] lpwsPassword;
 			delete[] lpwsCommandLine;
 			delete[] lpwsCurrentDir;
+			if(stInfoW.lpDesktop) delete[] stInfoW.lpDesktop;
 			goto Cleanup;
 		}
 		Sleep(250);
@@ -277,6 +293,7 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 		delete[] lpwsPassword;
 		delete[] lpwsCommandLine;
 		delete[] lpwsCurrentDir;
+		if(stInfoW.lpDesktop) delete[] stInfoW.lpDesktop;
 	}
 	else{
 		if(!CreateProcess(NULL, lpCmdLine, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, procSIPath, &stInfo, &procInfo)){
@@ -337,6 +354,9 @@ Cleanup:
 
 	if(secAttr.lpSecurityDescriptor)
 		LocalFree(secAttr.lpSecurityDescriptor);
+
+	if(stInfo.lpDesktop)
+		delete[] stInfo.lpDesktop;
 
 	return dwRetVal;
 }

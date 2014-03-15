@@ -230,3 +230,40 @@ BOOL fileLogPrint(LPCSTR szLog){
 	return TRUE;
 }
 #endif
+
+BOOL GetActiveDesktop(LPSTR lpBuffer, DWORD cbSize){
+	HDESK hDesk = NULL;
+	BOOL retVal = TRUE;
+	DWORD dwBytesNeeded=NULL;
+	CHAR tmpBuffer[MAX_PATH] = {0};
+
+	if(!lpBuffer || !cbSize) return FALSE;
+	
+	strcpy(tmpBuffer, "WINSTA0\\");
+
+	if(!(hDesk = OpenInputDesktop(NULL, FALSE, GENERIC_READ))){
+		retVal = FALSE;
+		if(!GetLastError()){
+			strcat(tmpBuffer, "Winlogon");
+			strncpy(lpBuffer, tmpBuffer, cbSize);
+		}
+		goto Cleanup;
+	}
+	
+	//WINSTA0\\Default
+	if(!GetUserObjectInformation(hDesk, UOI_NAME, (tmpBuffer+strlen(tmpBuffer)), MAX_PATH, &dwBytesNeeded)){
+		retVal = FALSE;
+		goto Cleanup;
+	}
+
+	if(cbSize < strlen(tmpBuffer)){
+		retVal = FALSE;
+		goto Cleanup;
+	}
+
+	strncpy(lpBuffer, tmpBuffer, cbSize);
+
+Cleanup:
+	if(hDesk) CloseDesktop(hDesk);
+	return retVal;
+}

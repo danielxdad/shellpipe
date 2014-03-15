@@ -20,6 +20,80 @@ DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND = FALSE;
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE = FALSE;
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE = FALSE;
 
+
+#define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
+    ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
+)
+
+#define FILE_DEVICE_FILE_SYSTEM         0x00000009
+#define METHOD_BUFFERED                 0
+#define FILE_ANY_ACCESS                 0
+
+#define FSCTL_IS_VOLUME_MOUNTED	CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 10, METHOD_BUFFERED, FILE_ANY_ACCESS)
+
+
+DWORD IsVolumeMount(LPCSTR lpszVolume){
+	HANDLE hVolume=NULL;
+	LPSTR lpTmpBuffer = new CHAR[MAX_PATH];
+	DWORD retVal = FALSE, bytesReturned;
+#ifdef DEBUG_SHOW_ERROR
+	CHAR msg[MAX_PATH]={0};
+#endif
+
+	if(!lpszVolume){
+		retVal = -1;
+		goto Cleanup;
+	}
+	
+	if(!strlen(lpszVolume)){
+		retVal = -1;
+		goto Cleanup;
+	}
+	
+	if(!lpTmpBuffer){
+		retVal = -1;
+		goto Cleanup;
+	}
+
+	strcpy(lpTmpBuffer, "\\\\.\\");
+	strncat(lpTmpBuffer, lpszVolume, MAX_PATH-10);
+	if(lpTmpBuffer[strlen(lpTmpBuffer)-1] == '\\')
+		lpTmpBuffer[strlen(lpTmpBuffer)-1] = '\0';
+
+	if((hVolume=CreateFile(lpTmpBuffer, GENERIC_READ, 
+	FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL)) == INVALID_HANDLE_VALUE){
+		#ifdef DEBUG_SHOW_ERROR
+		sprintf(msg, "Error open volume: %u", GetLastError());
+		MessageBox(NULL, msg, "Error", NULL);
+		#endif
+		retVal = -1;
+		goto Cleanup;
+	}
+
+	if(DeviceIoControl(hVolume, FSCTL_IS_VOLUME_MOUNTED, NULL, NULL, NULL, NULL, &bytesReturned, NULL)){
+		retVal = TRUE;
+		goto Cleanup;
+	}
+	else{
+		if(GetLastError()){
+			retVal = -1;
+			#ifdef DEBUG_SHOW_ERROR
+			sprintf(msg, "Error query information volume: %u", GetLastError());
+			MessageBox(NULL, msg, "Error", NULL);
+			#endif
+		}
+	}
+
+Cleanup:
+	if(lpTmpBuffer)
+		delete[] lpTmpBuffer;
+
+	if(hVolume && hVolume!=INVALID_HANDLE_VALUE)
+		CloseHandle(hVolume);
+
+	return retVal;
+}
+
 LPSTR* GetRemovableDrives(LPDWORD dwCount){
 	LPSTR lpBuffer = new CHAR[1024];
 	LPSTR lpTmp=NULL;
@@ -36,12 +110,14 @@ LPSTR* GetRemovableDrives(LPDWORD dwCount){
 
 	lpTmp = lpBuffer;
 	while(strlen(lpTmp)){
-		if(GetDriveType(lpTmp) == DRIVE_REMOVABLE && !strstr(lpTmp, "A:")){
+		if(GetDriveType(lpTmp) == DRIVE_REMOVABLE && !strstr(lpTmp, "A:") && !strstr(lpTmp, "B:")){
 			if(i < MAX_ARRAY_REMOVABLE_DRIVES){
-				lpRemovableDrives[i] = new CHAR[8];
-				memset(lpRemovableDrives[i], 0, 8);
-				strcpy(lpRemovableDrives[i], lpTmp);
-				i++;
+				if(IsVolumeMount(lpTmp) == TRUE){
+					lpRemovableDrives[i] = new CHAR[8];
+					memset(lpRemovableDrives[i], 0, 8);
+					strcpy(lpRemovableDrives[i], lpTmp);
+					i++;
+				}
 			}
 		}
 
