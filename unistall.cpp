@@ -20,7 +20,6 @@ DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND = FALSE;
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_REMOTE = FALSE;
 DWORD ACTIVE_UNISTALL_PROC_BY_DEMAND_UPGRADE = FALSE;
 
-
 #define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
     ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
 )
@@ -60,7 +59,7 @@ DWORD IsVolumeMount(LPCSTR lpszVolume){
 	if(lpTmpBuffer[strlen(lpTmpBuffer)-1] == '\\')
 		lpTmpBuffer[strlen(lpTmpBuffer)-1] = '\0';
 
-	if((hVolume=CreateFile(lpTmpBuffer, GENERIC_READ, 
+	if((hVolume=CreateFile(lpTmpBuffer, FILE_EXECUTE, 
 	FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, NULL, NULL)) == INVALID_HANDLE_VALUE){
 		#ifdef DEBUG_SHOW_ERROR
 		sprintf(msg, "Error open volume: %u", GetLastError());
