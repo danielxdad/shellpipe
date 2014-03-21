@@ -413,7 +413,7 @@ Cleanup:
 DWORD Macro_SendFile(HANDLE hPipe, LPSP_PACKET lpFirtsPacket){
 	HANDLE hFile=NULL;
 	LPSP_PACKET lpPacket=NULL;
-	CHAR msg[256] = {0};
+	CHAR msg[MAX_PATH] = {0};
 	DWORD dwRetVal, nbReads, nbTotalRead=0, dwFileSize=NULL;
 	LPSTR lpBuffer = new CHAR[BUFFER_SEND_FILE]; //10MB
 	DecodeString ds;
@@ -433,8 +433,9 @@ DWORD Macro_SendFile(HANDLE hPipe, LPSP_PACKET lpFirtsPacket){
 	if((hFile = CreateFile((LPSTR)lpFirtsPacket->lpParam1, MAXIMUM_ALLOWED, 
 		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
 		NULL, NULL)) == INVALID_HANDLE_VALUE){
-
-		WriteToPipe(hPipe, ds.length(), ds.getDecodeString((LPSTR)encStr_Error_opening_file), FLAG_ERROR);
+		
+		sprintf(msg, ds.getDecodeString((LPSTR)encStr_Error_opening_file), GetLastError());
+		WriteToPipe(hPipe, strlen(msg), msg, FLAG_ERROR);
 		return FALSE;
 	}
 
