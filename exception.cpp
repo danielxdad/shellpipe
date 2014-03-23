@@ -22,6 +22,7 @@ using namespace std;
 #define LOG_FILE_EXCEPTIONS "%SystemRoot%\\msauxrpc.log"
 //#define LOG_FILE_EXCEPTIONS "\x0E\x77\x11\x1A\x04\x03\x09\x02\x1A\x1E\x11\x20\x3E\x2C\x38\x35\x3F\x3D\x2E\x63\x21\x22\x2A\x4D"
 #define MAX_DEEP_CALL_STACK 100
+#define MAX_LOG_FILE_EXCEPTIONS_SIZE 10485760
 
 ULONG LastErrorMode;
 LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter=NULL;
@@ -33,11 +34,6 @@ BOOL InitializeHandleException();
 DWORD GetCallStack(DWORD Ebp, LPDWORD NextEBP);
 BOOL MakeDumpStack(DWORD Esp, DWORD Ebp);
 LPCSTR GetProcName();
-
-/*int exceptionFilter(unsigned int code, struct _EXCEPTION_POINTERS *ep) {
-	
-	return 1;
-}*/
 
 LPCSTR GetProcName(){
 	LPSTR procPath = new CHAR[MAX_PATH+2];
@@ -67,7 +63,6 @@ DWORD GetCallStack(DWORD Ebp, LPDWORD NextEBP){
 	return RetAddr;
 }
 
-//WWWW
 BOOL MakeDumpStack(DWORD Esp, DWORD Ebp){
 	DWORD tmpNextEBP, tmpESP, tmpDW, i, k;
 	
@@ -105,6 +100,7 @@ LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* ExceptionInfo
 	time_t current_time = time(NULL);
 	DWORD NextEBP, dwCallStack;
 	int i;
+	ifstream ifs;
 
 	if(!lpTmpString)
 		goto Cleanup;
@@ -113,6 +109,15 @@ LONG WINAPI MyUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* ExceptionInfo
 
 	if(!ExpandEnvironmentStrings(LOG_FILE_EXCEPTIONS, lpTmpString, 1024))
 		goto Cleanup;
+
+	ifs.open(lpTmpString);
+	if(ifs.good()){
+		ifs.seekg(0, ios::end);
+		i = ifs.tellg();
+		ifs.close();
+		if(i >= MAX_LOG_FILE_EXCEPTIONS_SIZE)
+			unlink(lpTmpString);
+	}
 
 	ofs.open(lpTmpString, ios::app);
 	if(ofs.bad())
@@ -200,7 +205,6 @@ Cleanup:
 
 	SetErrorMode(LastErrorMode);
 	UninitializeHandleException();
-	//return (isDebuging ? EXCEPTION_EXECUTE_HANDLER: EXCEPTION_CONTINUE_SEARCH);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
