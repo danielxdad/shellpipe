@@ -127,8 +127,6 @@ BOOL CreateUnloadMutex(HANDLE hPipe){
 
 	if(!(hUnloadMutex=CreateMutex(&secAttr, TRUE, ds.getDecodeString((LPSTR)UNLOAD_MUTEX)))){
 		valRet = FALSE;
-		//MessageBox(0, "Error CreateMutex", 0, 0);
-
 		if(GetLastError() == ERROR_ALREADY_EXISTS){
 			WriteToPipe(hPipe, ds.length(), 
 				ds.getDecodeString((LPSTR)encStr_Error_CreateMutex_alread_exists_im_closing), 
@@ -180,7 +178,8 @@ VOID UnloadDLL(void){
 
 
 BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput, 
-				 BOOL Interactive, LPSTR lpUserName, LPSTR lpPassword){
+				 BOOL Interactive, LPSTR lpUserName, LPSTR lpPassword,
+				 BOOL IgnoreInteractiveError){
 
 	HANDLE hToken=NULL, hReadPipeStdOut=NULL, hWritePipeStdOut=NULL;
 	STARTUPINFO stInfo={0};
@@ -189,6 +188,7 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 	DWORD numBytesRead=0, exitCode, nBytesStdOut=NULL, dwTmp, dwRetVal=TRUE;
 	CHAR msg[256]={0};
 	SECURITY_ATTRIBUTES secAttr;
+	BOOL retActiveDesktop=FALSE;
 	DecodeString ds;
 
 	stInfo.cb = sizeof(STARTUPINFO);
@@ -229,9 +229,10 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 			dwRetVal = FALSE;
 			goto Cleanup;
 		}
+		memset(stInfo.lpDesktop, 0, MAX_PATH);
 		
-		if(!GetActiveDesktop(stInfo.lpDesktop, MAX_PATH)){
-			if(!strlen(stInfo.lpDesktop)){
+		if(!(retActiveDesktop = GetActiveDesktop(stInfo.lpDesktop, MAX_PATH))){
+			if(!IgnoreInteractiveError){
 				sprintf(msg, ds.getDecodeString((LPSTR)encStr_Error_create_process), GetLastError());
 				WriteToPipe(hPipe, strlen(msg), msg, FLAG_ERROR);
 				dwRetVal = FALSE;
@@ -263,7 +264,8 @@ BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput,
 		stInfoW.hStdError = stInfo.hStdError;
 		stInfoW.hStdOutput = stInfo.hStdOutput;
 		stInfoW.hStdInput = hReadPipeStdOut;
-		if(Interactive){
+
+		if(Interactive && retActiveDesktop){
 			if(stInfo.lpDesktop){
 				stInfoW.lpDesktop = new WCHAR[strlen(stInfo.lpDesktop)+2];
 				mbstowcs(stInfoW.lpDesktop, stInfo.lpDesktop, strlen(stInfo.lpDesktop));
@@ -674,7 +676,7 @@ DWORD CheckMutex(LPVOID lpParam){
 		}
 		//}
 
-		if(WaitAndCheckUnloadMutex(2, 500))
+		if(WaitAndCheckUnloadMutex(2, 300))
 			UnloadDLL();
 	}
 

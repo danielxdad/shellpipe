@@ -127,7 +127,7 @@ VOID UnloadDLL(void);
 BOOL ReadLineFromPipe(HANDLE hPipe, LPSTR *Buffer);
 DWORD WriteToPipe(HANDLE hPipe, DWORD cbSize, LPSTR Buffer, DWORD dwFlags);
 DWORD WriteLineToPipe(HANDLE hPipe, LPSTR Buffer);
-BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput, BOOL Interactive, LPSTR lpUserName, LPSTR lpPassword);
+BOOL ExecuteApp(LPSTR lpCmdLine, HANDLE hPipe, BOOL waitForOutput, BOOL Interactive, LPSTR lpUserName, LPSTR lpPasswordm, BOOL IgnoreInteractiveError = TRUE);
 DWORD ShellPipe(HANDLE hPipe);
 BOOL ServerShellPipe(void);
 DWORD CheckMutex(LPVOID lpParam);

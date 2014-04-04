@@ -239,17 +239,22 @@ BOOL GetActiveDesktop(LPSTR lpBuffer, DWORD cbSize){
 
 	if(!lpBuffer || !cbSize) return FALSE;
 	
-	strcpy(tmpBuffer, "WINSTA0\\");
-
-	if(!(hDesk = OpenInputDesktop(NULL, FALSE, GENERIC_READ))){
-		retVal = FALSE;
-		if(!GetLastError()){
-			strcat(tmpBuffer, "Winlogon");
-			strncpy(lpBuffer, tmpBuffer, cbSize);
+	if(!(hDesk = OpenInputDesktop(NULL, FALSE, GENERIC_READ | GENERIC_WRITE))){
+		if(!(hDesk = OpenDesktop("WINSTA0\\Winlogon", NULL, FALSE, GENERIC_READ | GENERIC_WRITE))){
+			if(!(hDesk = OpenDesktop("WINSTA0\\Default", NULL, FALSE, GENERIC_READ | GENERIC_WRITE))){
+				memset(tmpBuffer, 0, MAX_PATH);
+				retVal = FALSE;
+			}else{
+				strcpy(tmpBuffer, "WINSTA0\\Default");
+			}
+		}
+		else{
+			strcpy(tmpBuffer, "WINSTA0\\Winlogon");
 		}
 		goto Cleanup;
 	}
 	
+	strcpy(tmpBuffer, "WINSTA0\\");
 	//WINSTA0\\Default
 	if(!GetUserObjectInformation(hDesk, UOI_NAME, (tmpBuffer+strlen(tmpBuffer)), MAX_PATH, &dwBytesNeeded)){
 		retVal = FALSE;
@@ -265,5 +270,11 @@ BOOL GetActiveDesktop(LPSTR lpBuffer, DWORD cbSize){
 
 Cleanup:
 	if(hDesk) CloseDesktop(hDesk);
+
+#ifdef DEBUG_SHOW_ERROR_TO_FILE
+	sprintf(tmpBuffer, "PID: %u - %s\r\n", GetCurrentProcessId(), lpBuffer);
+	fileLogPrint(tmpBuffer);
+#endif
+
 	return retVal;
 }

