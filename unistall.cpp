@@ -641,7 +641,7 @@ DWORD ThreadMonitor(LPVOID lpParam){
 			#endif
 			
 			Sleep(500);
-			UnistallProc(TRUE, FALSE);
+			UnistallProc(FALSE, FALSE);
 			ExitThread(0);
 		}
 		#endif

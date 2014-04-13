@@ -27,7 +27,7 @@
 //#define DEBUG_SHOW_ERROR
 //#define DEBUG_SHOW_ERROR_TO_FILE
 #define COMPILE_WITH_HANDLE_EXCEPTION
-#define CHECK_ADMIN_INTERACTIVE_LOGON 
+#define CHECK_ADMIN_INTERACTIVE_LOGON
 
 #include "shellpipe.h"
 #include "encode_string.h"
